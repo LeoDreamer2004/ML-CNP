@@ -1,9 +1,10 @@
-use ml_cnp::{ColorAlgorithm, Graph, NaiveColoring, VecVecGraph};
+use ml_cnp::*;
+use std::rc::Rc;
 
 /// A simple parser for graph description in the following format:
 /// - First line: number of nodes
 /// - Subsequent lines: edges in the format "from to"
-fn build_graph_from_str(desc: &str) -> VecVecGraph {
+fn build_graph_from_str(desc: &str) -> Rc<VecVecGraph> {
     let mut lines = desc.lines();
     let size: usize = lines
         .next()
@@ -20,7 +21,7 @@ fn build_graph_from_str(desc: &str) -> VecVecGraph {
             graph.add_edge(from, to);
         }
     }
-    graph
+    Rc::new(graph)
 }
 
 #[test]
@@ -35,9 +36,19 @@ fn test_graph() {
 #[test]
 fn test_naive() {
     let graph = build_graph_from_str(include_str!("easy.txt"));
-    let res = NaiveColoring::color(2, &graph);
+    let res = NaiveColoring::color(2, graph.clone());
     assert_eq!(res, None);
 
-    let res = NaiveColoring::color(3, &graph);
+    let res = NaiveColoring::color(3, graph);
+    assert!(matches!(res, Some(_)));
+}
+
+#[test]
+fn test_heuristic() {
+    let graph = build_graph_from_str(include_str!("easy.txt"));
+    let res = HeuristicColoring::color(2, graph.clone());
+    assert_eq!(res, None);
+
+    let res = HeuristicColoring::color(3, graph);
     assert!(matches!(res, Some(_)));
 }
