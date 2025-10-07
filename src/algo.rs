@@ -4,7 +4,6 @@ mod naive;
 use crate::{Color, Graph};
 pub use heuristic::HeuristicColoring;
 pub use naive::NaiveColoring;
-use std::rc::Rc;
 
 pub trait ColorAlgorithm<G>
 where
@@ -12,5 +11,17 @@ where
 {
     /// Attempt to color the graph using `num` colors.
     /// Returns the vector of colors if successful, otherwise [`None`].
-    fn color(num: usize, graph: Rc<G>) -> Option<Vec<Color>>;
+    fn color(&mut self, num: usize) -> Option<Vec<Color>>;
+
+    /// Validate the coloring.
+    fn validate(&self, color: &[Color]) -> bool {
+        for (from, to) in self.graph().edges() {
+            if color[from] == color[to] {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn graph(&self) -> &G;
 }

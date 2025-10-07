@@ -10,7 +10,7 @@ pub struct NaiveColoring<G: Graph> {
 }
 
 impl<G: Graph> NaiveColoring<G> {
-    fn create(color_num: usize, graph: Rc<G>) -> Self {
+    pub fn create(color_num: usize, graph: Rc<G>) -> Self {
         let colors = vec![None; graph.size()];
         Self {
             color_num,
@@ -46,9 +46,12 @@ impl<G: Graph> NaiveColoring<G> {
 }
 
 impl<G: Graph> ColorAlgorithm<G> for NaiveColoring<G> {
-    fn color(color_num: usize, graph: Rc<G>) -> Option<Vec<Color>> {
-        let mut algo = Self::create(color_num, graph);
-        algo.search(0);
-        algo.colors.into_iter().collect()
+    fn color(&mut self, _color_num: usize) -> Option<Vec<Color>> {
+        self.search(0);
+        self.colors.clone().into_iter().collect()
+    }
+
+    fn graph(&self) -> &G {
+        &self.graph
     }
 }

@@ -12,7 +12,7 @@ fn build_graph_from_str(desc: &str) -> Rc<VecVecGraph> {
         .trim()
         .parse()
         .expect("Invalid number of nodes");
-    let mut graph = ml_cnp::VecVecGraph::new(size);
+    let mut graph = VecVecGraph::new(size);
     for line in lines {
         let parts: Vec<&str> = line.trim().split_whitespace().collect();
         if parts.len() == 2 {
@@ -36,19 +36,25 @@ fn test_graph() {
 #[test]
 fn test_naive() {
     let graph = build_graph_from_str(include_str!("easy.txt"));
-    let res = NaiveColoring::color(2, graph.clone());
+    let mut algo = NaiveColoring::create(2, graph.clone());
+    let res = algo.color(2);
     assert_eq!(res, None);
 
-    let res = NaiveColoring::color(3, graph);
-    assert!(matches!(res, Some(_)));
+    let mut algo = NaiveColoring::create(3, graph.clone());
+    let res = algo.color(2);
+    assert!(res.is_some());
+    assert!(algo.validate(&res.unwrap()));
 }
 
 #[test]
 fn test_heuristic() {
     let graph = build_graph_from_str(include_str!("easy.txt"));
-    let res = HeuristicColoring::color(2, graph.clone());
+    let mut algo = NaiveColoring::create(2, graph.clone());
+    let res = algo.color(2);
     assert_eq!(res, None);
 
-    let res = HeuristicColoring::color(3, graph);
-    assert!(matches!(res, Some(_)));
+    let mut algo = NaiveColoring::create(3, graph.clone());
+    let res = algo.color(2);
+    assert!(res.is_some());
+    assert!(algo.validate(&res.unwrap()));
 }

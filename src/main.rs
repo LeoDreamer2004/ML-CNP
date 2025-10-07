@@ -28,6 +28,8 @@ fn build_graph_from_str(desc: &str) -> Rc<VecVecGraph> {
 
 fn main() {
     let graph = build_graph_from_str(include_str!("hard.txt"));
-    let res = HeuristicColoring::color(6, graph);
+    let mut algo = HeuristicColoring::create(6, graph);
+    let res = algo.color(6);
     assert!(res.is_some());
+    assert!(algo.validate(&res.unwrap()));
 }

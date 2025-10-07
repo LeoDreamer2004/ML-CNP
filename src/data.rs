@@ -3,6 +3,7 @@ use crate::Node;
 pub trait Graph {
     fn size(&self) -> usize;
     fn neighbors(&self, node: Node) -> &[Node];
+    fn edges(&self) -> Vec<(Node, Node)>;
 }
 
 pub struct VecVecGraph {
@@ -31,5 +32,15 @@ impl Graph for VecVecGraph {
 
     fn neighbors(&self, node: Node) -> &[Node] {
         &self.edges[node]
+    }
+
+    fn edges(&self) -> Vec<(Node, Node)> {
+        let mut edges = vec![];
+        for (from, neighbors) in self.edges.iter().enumerate() {
+            for to in neighbors {
+                edges.push((from, *to));
+            }
+        }
+        edges
     }
 }

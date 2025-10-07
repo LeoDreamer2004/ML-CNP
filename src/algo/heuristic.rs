@@ -10,7 +10,7 @@ pub struct HeuristicColoring<G: Graph> {
 }
 
 impl<G: Graph> HeuristicColoring<G> {
-    fn create(color_num: usize, graph: Rc<G>) -> Self {
+    pub fn create(color_num: usize, graph: Rc<G>) -> Self {
         let size = graph.size();
         let domains = vec![(0..color_num).collect(); size];
 
@@ -82,8 +82,13 @@ impl<G: Graph> HeuristicColoring<G> {
         (true, removals)
     }
 
-    fn search(&mut self, node: Node, unused_colors: &mut IntSet<Color>) -> bool {
-        if node == self.graph.size() {
+    fn search(
+        &mut self,
+        node: Node,
+        unused_colors: &mut IntSet<Color>,
+        unused_nodes: &mut Vec<Node>,
+    ) -> bool {
+        if unused_nodes.is_empty() {
             return true;
         }
 
@@ -107,13 +112,19 @@ impl<G: Graph> HeuristicColoring<G> {
             }
             let removed = unused_colors.remove(&color);
             self.colors[node] = Some(color);
-            if self.search(node + 1, unused_colors) {
+
+            unused_nodes.sort_by_key(|node| -(self.domains[*node].len() as isize));
+            let next = unused_nodes.last().cloned().unwrap();
+            unused_nodes.remove(unused_nodes.len() - 1);
+
+            if self.search(next, unused_colors, unused_nodes) {
                 return true;
             }
             self.colors[node] = None;
             if removed {
                 unused_colors.insert(color);
             }
+            unused_nodes.push(next);
 
             self.backtrack(removals);
         }
@@ -123,9 +134,13 @@ impl<G: Graph> HeuristicColoring<G> {
 }
 
 impl<G: Graph> ColorAlgorithm<G> for HeuristicColoring<G> {
-    fn color(color_num: usize, graph: Rc<G>) -> Option<Vec<Color>> {
-        let mut algo = Self::create(color_num, graph);
-        algo.search(0, &mut (0..color_num).collect());
-        algo.colors.into_iter().collect()
+    fn color(&mut self, color_num: usize) -> Option<Vec<Color>> {
+        let size = self.graph.size();
+        self.search(0, &mut (0..color_num).collect(), &mut (0..size).collect());
+        self.colors.clone().into_iter().collect()
+    }
+
+    fn graph(&self) -> &G {
+        &self.graph
     }
 }
