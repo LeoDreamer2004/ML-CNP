@@ -26,23 +26,29 @@ impl<G: Graph> HeuristicColoring<G> {
     }
 
     /// Order colors using LCV (Least Constraining Value)
-    fn order_colors(&self, node: Node) -> Vec<Color> {
-        let mut color_scores: Vec<_> = self.domains[node]
-            .iter()
-            .map(|&color| {
-                let impact = self
-                    .graph
-                    .neighbors(node)
-                    .iter()
-                    .filter(|&&neighbor| !self.colored(neighbor))
-                    .filter(|&&neighbor| self.domains[neighbor].contains(&color))
-                    .count();
-                (color, impact)
-            })
-            .collect();
+    fn order_colors(&self, node: Node, unused_colors: &HashSet<Color>) -> Vec<Color> {
+        let mut domain: Vec<_> = if unused_colors.is_empty() {
+            self.domains[node].iter().cloned().collect()
+        } else {
+            // we only need to search ONE unused color, because all unused colors have the same impact
+            let unused = *unused_colors.iter().next().unwrap();
+            // self.domains[node] - unused_colors + unused
+            self.domains[node]
+                .difference(&unused_colors)
+                .cloned()
+                .chain(std::iter::once(unused))
+                .collect()
+        };
 
-        color_scores.sort_by_key(|(_, impact)| *impact);
-        color_scores.into_iter().map(|(color, _)| color).collect()
+        domain.sort_by_key(|color| {
+            self.graph
+                .neighbors(node)
+                .iter()
+                .filter(|&&neighbor| !self.colored(neighbor))
+                .filter(|&&neighbor| self.domains[neighbor].contains(color))
+                .count()
+        });
+        domain
     }
 
     /// Forward Checking: After assigning a color to a node, remove that color from the domains of its uncolored neighbors.
@@ -73,11 +79,14 @@ impl<G: Graph> HeuristicColoring<G> {
         true
     }
 
-    fn search(&mut self, node: Node) -> bool {
+    fn search(&mut self, node: Node, unused_colors: &mut HashSet<Color>) -> bool {
         if node == self.graph.size() {
             return true;
         }
-        let ordered_colors = self.order_colors(node);
+
+            dbg!(node);
+
+        let ordered_colors = self.order_colors(node, unused_colors);
 
         for color in ordered_colors {
             if self
@@ -92,12 +101,15 @@ impl<G: Graph> HeuristicColoring<G> {
             if !self.forward_check(node, color) {
                 continue;
             }
-
+            let removed = unused_colors.remove(&color);
             self.colors[node] = Some(color);
-            if self.search(node + 1) {
+            if self.search(node + 1, unused_colors) {
                 return true;
             }
             self.colors[node] = None;
+            if removed {
+                unused_colors.insert(color);
+            }
         }
 
         false
@@ -107,7 +119,7 @@ impl<G: Graph> HeuristicColoring<G> {
 impl<G: Graph> ColorAlgorithm<G> for HeuristicColoring<G> {
     fn color(color_num: usize, graph: Rc<G>) -> Option<Vec<Color>> {
         let mut algo = Self::create(color_num, graph);
-        algo.search(0);
+        algo.search(0, &mut (0..color_num).collect());
         algo.colors.into_iter().collect()
     }
 }
