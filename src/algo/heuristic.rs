@@ -1,11 +1,12 @@
 use crate::{Color, ColorAlgorithm, Graph, Node};
+use nohash::IntSet;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 pub struct HeuristicColoring<G: Graph> {
     graph: Rc<G>,
     colors: Vec<Option<Color>>,
-    domains: Vec<HashSet<Color>>,
+    domains: Vec<IntSet<Color>>,
 }
 
 impl<G: Graph> HeuristicColoring<G> {
@@ -26,7 +27,7 @@ impl<G: Graph> HeuristicColoring<G> {
     }
 
     /// Order colors using LCV (Least Constraining Value)
-    fn order_colors(&self, node: Node, unused_colors: &HashSet<Color>) -> Vec<Color> {
+    fn order_colors(&self, node: Node, unused_colors: &IntSet<Color>) -> Vec<Color> {
         let mut domain: Vec<_> = if unused_colors.is_empty() {
             self.domains[node].iter().cloned().collect()
         } else {
@@ -34,7 +35,7 @@ impl<G: Graph> HeuristicColoring<G> {
             let unused = *unused_colors.iter().next().unwrap();
             // self.domains[node] - unused_colors + unused
             self.domains[node]
-                .difference(&unused_colors)
+                .difference(unused_colors)
                 .cloned()
                 .chain(std::iter::once(unused))
                 .collect()
@@ -51,44 +52,45 @@ impl<G: Graph> HeuristicColoring<G> {
         domain
     }
 
+    fn backtrack(&mut self, removals: HashMap<Node, HashSet<Color>>) {
+        for (node, colors) in removals {
+            self.domains[node].extend(colors);
+        }
+    }
+
     /// Forward Checking: After assigning a color to a node, remove that color from the domains of its uncolored neighbors.
-    fn forward_check(&mut self, node: Node, color: Color) -> bool {
+    fn forward_check(&mut self, node: Node, color: Color) -> (bool, HashMap<Node, HashSet<Color>>) {
         let mut removals = HashMap::new();
 
         for &neighbor in self.graph.neighbors(node) {
-            if !self.colored(neighbor) {
-                if self.domains[neighbor].contains(&color) {
-                    removals
-                        .entry(neighbor)
-                        .or_insert_with(HashSet::new)
-                        .insert(color);
+            if !self.colored(neighbor) && self.domains[neighbor].contains(&color) {
+                removals
+                    .entry(neighbor)
+                    .or_insert_with(HashSet::new)
+                    .insert(color);
 
-                    self.domains[neighbor].remove(&color);
+                self.domains[neighbor].remove(&color);
 
-                    if self.domains[neighbor].is_empty() {
-                        // backtrack
-                        for (node, colors) in removals {
-                            self.domains[node].extend(colors);
-                        }
-                        return false;
-                    }
+                if self.domains[neighbor].is_empty() {
+                    // backtrack
+                    self.backtrack(removals);
+                    return (false, HashMap::new());
                 }
             }
         }
 
-        true
+        (true, removals)
     }
 
-    fn search(&mut self, node: Node, unused_colors: &mut HashSet<Color>) -> bool {
+    fn search(&mut self, node: Node, unused_colors: &mut IntSet<Color>) -> bool {
         if node == self.graph.size() {
             return true;
         }
 
-            dbg!(node);
-
         let ordered_colors = self.order_colors(node, unused_colors);
 
         for color in ordered_colors {
+            // if some neighbor has the same color, skip
             if self
                 .graph
                 .neighbors(node)
@@ -98,7 +100,9 @@ impl<G: Graph> HeuristicColoring<G> {
                 continue;
             }
 
-            if !self.forward_check(node, color) {
+            let (avail, removals) = self.forward_check(node, color);
+
+            if !avail {
                 continue;
             }
             let removed = unused_colors.remove(&color);
@@ -110,6 +114,8 @@ impl<G: Graph> HeuristicColoring<G> {
             if removed {
                 unused_colors.insert(color);
             }
+
+            self.backtrack(removals);
         }
 
         false
