@@ -34,26 +34,13 @@ fn test_graph() {
 }
 
 #[test]
-fn test_naive() {
-    let graph = build_graph_from_str(include_str!("easy.txt"));
-    let mut algo = NaiveColoring::create(2, graph.clone());
-    let res = algo.color(2);
-    assert_eq!(res, None);
-
-    let mut algo = NaiveColoring::create(3, graph.clone());
-    let res = algo.color(2);
-    assert!(res.is_some());
-    assert!(algo.validate(&res.unwrap()));
-}
-
-#[test]
 fn test_heuristic() {
     let graph = build_graph_from_str(include_str!("easy.txt"));
-    let mut algo = NaiveColoring::create(2, graph.clone());
+    let mut algo = HeuristicColoring::create(2, graph.clone());
     let res = algo.color(2);
     assert_eq!(res, None);
 
-    let mut algo = NaiveColoring::create(3, graph.clone());
+    let mut algo = HeuristicColoring::create(3, graph.clone());
     let res = algo.color(2);
     assert!(res.is_some());
     assert!(algo.validate(&res.unwrap()));

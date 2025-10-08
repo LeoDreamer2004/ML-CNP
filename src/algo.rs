@@ -1,9 +1,7 @@
 mod heuristic;
-mod naive;
 
 use crate::{Color, Graph};
 pub use heuristic::HeuristicColoring;
-pub use naive::NaiveColoring;
 
 pub trait ColorAlgorithm<G>
 where
