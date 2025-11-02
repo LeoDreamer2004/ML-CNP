@@ -1,4 +1,9 @@
+pub mod hash;
+
 use crate::Node;
+use crate::constants::EPS;
+use approx::AbsDiffEq;
+use nalgebra::Point3;
 
 pub trait Graph {
     fn size(&self) -> usize;
@@ -22,6 +27,19 @@ impl VecVecGraph {
     pub fn add_edge(&mut self, from: Node, to: Node) {
         self.edges[from].push(to);
         self.edges[to].push(from);
+    }
+
+    pub fn from_points(points: &[Point3<f64>], dist: f64) -> Self {
+        let mut graph = VecVecGraph::new(points.len());
+        for i in 0..points.len() {
+            for j in 0..i {
+                if (points[i] - points[j]).norm().abs_diff_eq(&dist, EPS) {
+                    graph.add_edge(i, j);
+                }
+            }
+        }
+
+        graph
     }
 }
 

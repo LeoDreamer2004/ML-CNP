@@ -1,9 +1,12 @@
-use crate::{Color, ColorAlgorithm, Graph, Node};
+use crate::algo::ColorAlgorithm;
+use crate::graph::Graph;
+use crate::{Color, Node};
 use nohash::IntSet;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 pub struct HeuristicColoring<G: Graph> {
+    color_num: usize,
     graph: Rc<G>,
     colors: Vec<Option<Color>>,
     domains: Vec<IntSet<Color>>,
@@ -15,6 +18,7 @@ impl<G: Graph> HeuristicColoring<G> {
         let domains = vec![(0..color_num).collect(); size];
 
         Self {
+            color_num,
             graph,
             colors: vec![None; size],
             domains,
@@ -134,9 +138,13 @@ impl<G: Graph> HeuristicColoring<G> {
 }
 
 impl<G: Graph> ColorAlgorithm<G> for HeuristicColoring<G> {
-    fn color(&mut self, color_num: usize) -> Option<Vec<Color>> {
+    fn color(&mut self) -> Option<Vec<Color>> {
         let size = self.graph.size();
-        self.search(0, &mut (0..color_num).collect(), &mut (0..size).collect());
+        self.search(
+            0,
+            &mut (0..self.color_num).collect(),
+            &mut (0..size).collect(),
+        );
         self.colors.clone().into_iter().collect()
     }
 

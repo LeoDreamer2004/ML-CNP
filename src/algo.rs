@@ -1,15 +1,16 @@
 mod heuristic;
 
-use crate::{Color, Graph};
+use crate::Color;
+use crate::graph::Graph;
 pub use heuristic::HeuristicColoring;
 
 pub trait ColorAlgorithm<G>
 where
     G: Graph,
 {
-    /// Attempt to color the graph using `num` colors.
+    /// Attempt to color the graph.
     /// Returns the vector of colors if successful, otherwise [`None`].
-    fn color(&mut self, num: usize) -> Option<Vec<Color>>;
+    fn color(&mut self) -> Option<Vec<Color>>;
 
     /// Validate the coloring.
     fn validate(&self, color: &[Color]) -> bool {

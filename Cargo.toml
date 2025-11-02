@@ -5,3 +5,7 @@ edition = "2024"
 
 [dependencies]
 nohash = "0.2.0"
+nalgebra = "0.34.1"
+approx = "0.5.1"
+xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
+rayon = "1.11.0"
